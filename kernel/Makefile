@@ -138,7 +138,7 @@ obj-$(CONFIG_RESOURCE_KUNIT_TEST) += resource_kunit.o
 obj-$(CONFIG_SYSCTL_KUNIT_TEST) += sysctl-test.o
 
 #for cxl shm messaging syscall
-obj-$(CXL_SHMM_HANDLER)			+= cxlshm_msg/
+obj-y		+= cxlshm_msg/
 
 CFLAGS_stackleak.o += $(DISABLE_STACKLEAK_PLUGIN)
 obj-$(CONFIG_GCC_PLUGIN_STACKLEAK) += stackleak.o
