@@ -168,5 +168,3 @@ ifeq ($(CONFIG_X86_64),y)
 	obj-y				+= vsmp_64.o
 endif
 
-#for cxl shm messaging syscall
-obj-$(CXL_SHMM_HANDLER)			+= cxlshm_msg/
