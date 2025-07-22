@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+menuconfig CXL_SHMM_HANDLER
+	tristate "CXL Shared memory handler"
+	depends on LIBNVDIMM && NVDIMM_DAX && DEV_DAX && DEV_DAX_PMEM
+	help
+	  For CXL sync handler
+
