@@ -152,7 +152,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 
 	inode = path.dentry->d_inode;
 	if (!S_ISCHR(inode->i_mode)) {
-		pr_info("wrong file. %d\n", S_CHR(inode->i_mode));
+		pr_info("wrong file. %d\n", S_ISCHR(inode->i_mode));
 		err = -EINVAL;
 		goto out_path_put;
 	}
