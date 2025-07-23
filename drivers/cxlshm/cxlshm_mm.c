@@ -22,6 +22,16 @@
 #define IOCTL_MAGIC             0xCC
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct cxl_dev_path_struct)
 
+//redefine this here
+struct dax_device {
+	struct inode inode;
+	struct cdev cdev;
+	void *private;
+	unsigned long flags;
+	const struct dax_operations *ops;
+	void *holder_data;
+	const struct dax_holder_operations *holder_ops;
+};
 
 struct cxl_dev_path_struct {
 	char path[FILE_PATH_LENGTH];
@@ -145,7 +155,8 @@ static int lookup_daxdevice(const char *pathname, struct dax_device *dd) {
 		goto out_path_put;
 	}
 
-	return container_of(inode, struct dax_device, inode);
+	dd = container_of(inode, struct dax_device, inode);
+	return 0;
 
 out_path_put:
 	path_put(&path);
