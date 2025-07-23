@@ -155,7 +155,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 		goto out_path_put;
 	}
 
-	return container_of(inode, struct dax_device, inode);
+	return container_of(&inode, struct dax_device, inode);
 
 out_path_put:
 	path_put(&path);
