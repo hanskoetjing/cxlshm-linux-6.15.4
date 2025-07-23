@@ -137,7 +137,7 @@ out_path_put:
 }
 
 //taken from famfs kernel code
-static int lookup_daxdevice(const char *pathname, struct dax_device *dd) {
+static struct dax_device *lookup_daxdevice(const char *pathname) {
 	struct inode *inode;
 	struct path path;
 	int err;
@@ -155,14 +155,11 @@ static int lookup_daxdevice(const char *pathname, struct dax_device *dd) {
 		goto out_path_put;
 	}
 
-	dd = container_of(inode, struct dax_device, inode);
-	if(dd)
-		pr_info("got one\n");
-	return 0;
+	return container_of(inode, struct dax_device, inode);
 
 out_path_put:
 	path_put(&path);
-	return err;
+	//return err;
 }
 
 static int get_cxl_device_old(void) {
@@ -185,7 +182,7 @@ static int get_cxl_device_old(void) {
 }
 
 static int get_cxl_device(void) {
-	int ret = lookup_daxdevice(device_path, cxl_dax_device);
+	cxl_dax_device = lookup_daxdevice(device_path);
 	if (cxl_dax_device) {
 		pr_info("got dax_device\n");
 		dax_write_cache(cxl_dax_device, false);
