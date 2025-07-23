@@ -10,6 +10,7 @@
 #include <linux/types.h>
 #include <linux/namei.h>
 #include <linux/path.h>
+#include <linux/dcache.h>
 #include <linux/dax.h>
 #include <linux/ioport.h>
 #include "dax-private.h"
@@ -149,13 +150,15 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 	if (err)
 		return NULL;
 
-	inode = d_backing_inode(path.dentry);
+	inode = path.dentry->d_inode;
 	if (!S_ISCHR(inode->i_mode)) {
+		pr_info("wrong file. %d\n", S_CHR(inode->i_mode));
 		err = -EINVAL;
 		goto out_path_put;
 	}
-
-	return container_of(inode, struct dax_device, inode);
+	struct dax_devices *d = container_of(inode, struct dax_device, inode);
+	if (d->ops == NULL) pr_info("Invalid dax device\n");
+	return d;
 
 out_path_put:
 	path_put(&path);
