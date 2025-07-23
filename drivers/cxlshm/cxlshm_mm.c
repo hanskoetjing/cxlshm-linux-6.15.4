@@ -156,6 +156,8 @@ static int lookup_daxdevice(const char *pathname, struct dax_device *dd) {
 	}
 
 	dd = container_of(inode, struct dax_device, inode);
+	if(dd)
+		pr_info("got one\n");
 	return 0;
 
 out_path_put:
