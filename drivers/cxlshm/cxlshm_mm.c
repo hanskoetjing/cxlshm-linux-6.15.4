@@ -61,6 +61,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pr_info("cxl: fault region size: %lu\n", size);
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	dax_pgoff = vmf->pgoff;
+	if (!cxl_dax_device)
+		get_cxl_device();
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
 	if (owned) {
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
