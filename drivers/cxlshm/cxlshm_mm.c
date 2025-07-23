@@ -143,8 +143,8 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 	int err;
 
 	if (!pathname || !*pathname)
-		return -EINVAL;
-
+		return NULL;
+	pr_info("%s\n", pathname);
 	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
 	if (err)
 		return NULL;
@@ -155,7 +155,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 		goto out_path_put;
 	}
 
-	return container_of(&inode, struct dax_device, inode);
+	return container_of(inode, struct dax_device, inode);
 
 out_path_put:
 	path_put(&path);
