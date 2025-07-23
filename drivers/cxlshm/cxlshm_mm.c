@@ -37,7 +37,6 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 static int get_cxl_device(void);
 static pgoff_t dax_pgoff; 
-static void __iomem *io_base;
 
 
 static const struct file_operations fops = {
@@ -74,13 +73,11 @@ const struct vm_operations_struct cxl_helper_file_vm_ops = {
 
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 	unsigned long size = vma->vm_end - vma->vm_start;
-	void *kaddr;
 
 	pr_info("cxl: mmap region size: %lu\n", size);
 	vma->vm_ops = &cxl_helper_file_vm_ops;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
-	pfn_t pf;
 	if (cxl_dax_device)
 		get_cxl_device();
 	//not remap_pfn_range in here, will be handled by page fault function
