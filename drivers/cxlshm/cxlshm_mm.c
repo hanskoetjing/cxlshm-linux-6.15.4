@@ -106,11 +106,6 @@ static int lookup_daxdev(const char *pathname, dev_t *devno) {
 		goto out_path_put;
 	}
 
-	if (!may_open_dev(&path)) { /* had to export this */
-		err = -EACCES;
-		goto out_path_put;
-	}
-
 	 /* if it's dax, i_rdev is struct dax_device */
 	*devno = inode->i_rdev;
 
