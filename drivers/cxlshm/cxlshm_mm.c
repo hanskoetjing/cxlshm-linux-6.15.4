@@ -1,4 +1,3 @@
-// ffs_handler_ioctl_rw.c
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/fs.h>
@@ -50,18 +49,28 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pfn_t pf;
     void *kaddr;
     long nr_pages_avail;
+	struct vm_area_struct vma;
+	int owned = 1;
+	vm_fault_t ret = 0;
     
-	pr_info("Page fault at user address 0x%lx (pgoff 0x%lx)\n",
-           vmf->address, vmf->pgoff);
-	dax_pgoff = vmf->pgoff;
-	if (!cxl_dax_device)
-		get_cxl_device();
-	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, 1, DAX_ACCESS, &kaddr, &pf);
-	pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 	
-	vm_fault_t ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-	pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
-		vmf->address, vmf->pgoff);	
+	pr_info("Page fault at user address 0x%lx (pgoff 0x%lx)\n",
+		vmf->address, vmf->pgoff);
+	vma = vmf->vma;
+	unsigned long size = vma->vm_end - vma->vm_start;
+	pr_info("cxl: fault region size: %lu\n", size);
+	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
+	dax_pgoff = vmf->pgoff;
+	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+	if (owned) {
+		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+		pr_info("Mapping 0x%lx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
+			vmf->address, vmf->pgoff);
+	} else {
+		pr_info("Other node is using the same address 0x%lx\n", pf.val);
+		ret = -EAGAIN;
+	}
 	
 	return ret;
 }
@@ -73,13 +82,12 @@ const struct vm_operations_struct cxl_helper_file_vm_ops = {
 
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 	unsigned long size = vma->vm_end - vma->vm_start;
-
 	pr_info("cxl: mmap region size: %lu\n", size);
+	if (size == 0)
+		return -EINVAL;
 	vma->vm_ops = &cxl_helper_file_vm_ops;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
-	if (cxl_dax_device)
-		get_cxl_device();
 	//not remap_pfn_range in here, will be handled by page fault function
 	return 0;
 }
@@ -102,7 +110,7 @@ static int lookup_daxdev(const char *pathname, dev_t *devno) {
 		err = -EINVAL;
 		goto out_path_put;
 	}
-
+	//may_open_dev is taken out
 	 /* if it's dax, i_rdev is struct dax_device */
 	*devno = inode->i_rdev;
 
@@ -181,4 +189,4 @@ static void __exit cxl_range_helper_exit(void) {
 module_init(cxl_range_helper_init);
 module_exit(cxl_range_helper_exit);
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("FAMFS sync helper for multi-host configuration (r/w for all, not only master)");
+MODULE_DESCRIPTION("CXL shared memory area access helper (r/w for every node)");
