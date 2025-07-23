@@ -156,7 +156,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 		err = -EINVAL;
 		goto out_path_put;
 	}
-	struct dax_devices *d = container_of(inode, struct dax_device, inode);
+	struct dax_device *d = container_of(inode, struct dax_device, inode);
 	if (d->ops == NULL) pr_info("Invalid dax device\n");
 	return d;
 
