@@ -126,7 +126,33 @@ out_path_put:
 	return err;
 }
 
-static int get_cxl_device(void) {
+//taken from famfs kernel code
+static int lookup_daxdevice(const char *pathname, struct dax_device *dd) {
+	struct inode *inode;
+	struct path path;
+	int err;
+
+	if (!pathname || !*pathname)
+		return -EINVAL;
+
+	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
+	if (err)
+		return err;
+
+	inode = d_backing_inode(path.dentry);
+	if (!S_ISCHR(inode->i_mode)) {
+		err = -EINVAL;
+		goto out_path_put;
+	}
+
+	return container_of(inode, struct dax_device, inode);
+
+out_path_put:
+	path_put(&path);
+	return err;
+}
+
+static int get_cxl_device_old(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	if (!l) {
 		pr_info("dax dev num: %d\n", dax_dev_num);
@@ -140,6 +166,19 @@ static int get_cxl_device(void) {
 		
 	} else {
 		pr_info("no dax dev num:\n");
+	}
+	
+	return 0;
+}
+
+static int get_cxl_device(void) {
+	int ret = lookup_daxdevice(device_path, cxl_dax_device);
+	if (cxl_dax_device) {
+		pr_info("got dax_device\n");
+		dax_write_cache(cxl_dax_device, false);
+	} else {
+		pr_info("no cxl_dax_device\n");
+		return -ENXIO;
 	}
 	
 	return 0;
