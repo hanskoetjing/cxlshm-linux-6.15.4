@@ -12,6 +12,7 @@
 #include <linux/path.h>
 #include <linux/dax.h>
 #include <linux/ioport.h>
+#include "dax-private.h"
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -60,16 +61,19 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	unsigned long size = vma->vm_end - vma->vm_start;
 	
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
-	pr_info("cxl: fault region size: %lu, number of pages: %d\n", size, nr_of_pages);
+	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
 	dax_pgoff = vmf->pgoff;
-	if (cxl_dax_device == NULL)
-		get_cxl_device();
-	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+	if (!dax_alive(cxl_dax_device))
+		run_dax(cxl_dax_device);
+	pr_info("getting pfn from dax mem %d\n", dax_alive(cxl_dax_device));
+	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, 1, DAX_ACCESS, &kaddr, &pf);
 	if (owned) {
-		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
-		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
-			vmf->address, vmf->pgoff);
+			pr_info("return val: %ld\n", nr_pages_avail);
+			if (nr_pages_avail < 0) return -ENXIO;
+			pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+			ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+			pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
+					vmf->address, vmf->pgoff);
 	} else {
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
