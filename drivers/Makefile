@@ -197,4 +197,4 @@ obj-$(CONFIG_DPLL)		+= dpll/
 
 obj-$(CONFIG_S390)		+= s390/
 
-obj-$(CXL_SHMM_HANDLER)		+= cxlshm/
+obj-$(CONFIG_CXL_SHMM_HANDLER)		+= cxlshm/
