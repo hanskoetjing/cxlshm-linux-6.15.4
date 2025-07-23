@@ -147,7 +147,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 
 	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
 	if (err)
-		return err;
+		return NULL;
 
 	inode = d_backing_inode(path.dentry);
 	if (!S_ISCHR(inode->i_mode)) {
@@ -159,7 +159,7 @@ static struct dax_device *lookup_daxdevice(const char *pathname) {
 
 out_path_put:
 	path_put(&path);
-	//return err;
+	return NULL;
 }
 
 static int get_cxl_device_old(void) {
