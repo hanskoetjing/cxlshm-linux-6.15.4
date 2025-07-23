@@ -49,7 +49,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pfn_t pf;
     void *kaddr;
     long nr_pages_avail;
-	struct vm_area_struct vma;
+	struct vm_area_struct *vma;
 	int owned = 1;
 	vm_fault_t ret = 0;
     
@@ -65,10 +65,10 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	if (owned) {
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%lx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
+		pr_info("Mapping 0x%lx from mem to 0x%llx (pgoff 0x%lx)\n", pf.val,
 			vmf->address, vmf->pgoff);
 	} else {
-		pr_info("Other node is using the same address 0x%lx\n", pf.val);
+		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
 	
